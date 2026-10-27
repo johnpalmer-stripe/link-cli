@@ -2,7 +2,7 @@
 version: 0.28.0
 name: create-payment-credential
 description: |
-  Gets secure payment credentials (cards, tokens) from a Link wallet for one-time purchases and recurring payments. Use when the user says "get me a card", "buy something", "pay for X", "make a purchase", "I need to pay", "complete checkout", or asks to set up a subscription or transact on a merchant site. Use when the user asks to connect or log in to or sign up for their Link account.
+  Gets secure payment credentials (cards, tokens) from a Link wallet for one-time purchases and recurring payments. Use when the user says "get me a card", "buy something", "pay for X", "make a purchase", "I need to pay", "complete checkout", or asks to set up a subscription or transact on a merchant site. Use when the user asks to connect or log in to or sign up for their Link account. For purchases that should happen later, repeatedly on a schedule (separate one-time purchases, not a merchant subscription), while the user is away and cannot approve them, when the user simply does not want to manually approve purchases because it's tedious, or when paying with Link balance, also use the `link-balance` skill.
 allowed-tools:
  - Bash(link-cli:*)
  - Bash(npx --yes @stripe/link-cli:*)
@@ -111,7 +111,7 @@ Always check the current authentication status before starting a new login flow 
 
 If the user is already authenticated but you need broader access (an additional `scope`, `--source-actions`, or `--authorization-detail`), use `auth upgrade` instead of `auth login`. It takes the same flags but, rather than stopping with an "already logged in" message, merges what you request with the current `scope`/`authorization_details` and starts a new approval for the superset — so existing access is never dropped. Check `auth status` first so you know what's already granted. The current session stays valid during the approval and is only replaced once the user approves the new one, so an abandoned upgrade leaves the existing session working.
 
-Optionally, before a purchase, run `link-cli user-info retrieve` to inspect balance eligibility, address, applicable spend limits, and verification requirements. The optional `eligible_for_balance` field says whether the user's balance is available for Agent Wallet usage. Finite limit values are cents, while `null` limit or remaining values mean unlimited. When `agent_wallet_verification_requirement.action_url` is present, direct the user there to complete the required action.
+Optionally, before a purchase, run `link-cli user-info retrieve` to inspect Link balance eligibility, address, applicable spend limits, and verification requirements. The optional `eligible_for_balance` field says whether the user's balance is available for Agent Wallet usage. Finite limit values are cents, while `null` limit or remaining values mean unlimited. When `agent_wallet_verification_requirement.action_url` is present, direct the user there to complete the required action.
 
 ### Step 2: Evaluate the merchant site BEFORE creating a spend request
 
@@ -145,6 +145,12 @@ Link will automatically use the default payment method on the account. If the us
 ```bash
 link-cli payment-methods list
 ```
+
+**Link balance:** the list can include a Link balance payment method, identified by `"type": "BALANCE"` and a `balance_details` object. It holds money in the user's Link account and is set up once, through a separate onboarding flow rather than the initial `link-cli` setup. After that it is one of the user's payment methods and can be used on any spend request, including a normal one the user approves.
+
+- If Link balance is listed, `balance_details.available_balance` shows the user's current balance. This does not mean you have an approval policy: permission to create spend requests that skip approval when the individual purchase is below a specified maximum amount. Check that with `link-cli approval-policy retrieve --format json`, which returns an error if you have no policy.
+- If the purchase should happen without approval because it needs to happen later, repeatedly on a schedule, while the user is away or asleep, or because the user wants to avoid the friction of manual approval, then the user must have an approval policy for you. Load the `link-balance` skill before agreeing to the purchase. It covers checking the current balance and transaction limit against the expected total, flagging any shortfall to the user, and sending them to set up or top up Link balance or raise the limit.
+- If the user is present, can approve the purchase, and has not said they want to stop approving purchases manually, you do not need an approval policy. Do not push Link balance on every purchase.
 
 Only rename or clear a payment-method nickname when the user explicitly asks.
 Never infer that a nickname should change. If the target ID is not known, run
@@ -195,6 +201,15 @@ link-cli spend-request create \
 Card requests may also include `--network-id <network_id>` to identify the
 merchant's network profile. Keep the card's merchant name and URL parameters.
 
+**Paying with Link balance:** pass the Link balance payment method's ID with `--payment-method-id` and do not rely on the default payment method. The user approves the request as usual unless you pass `--use-approval-policy`. To be approved automatically, all of these must be true:
+
+- The request uses the Link balance payment method's ID as `--payment-method-id`.
+- The final total, including tax, shipping, and fees, is below the `limits.per_purchase` amount of the `spend_request_create` rule returned by `approval-policy retrieve`.
+- If that rule lists `allowed_payment_methods`, the Link balance ID is in it.
+- The available Link balance covers the full total.
+
+Pass `--use-approval-policy` only in that case, and see the `link-balance` skill for the full checks. Do not use the delegated-approval `--approve` flag or `--approval-detail` for this. Those state that you already collected the user's approval. After creating the request, read its `status`. Only `approved` means approval was skipped. `created` or `pending_approval` means the user still has to approve it. Do not tell the user a purchase will happen unattended until those checks pass. The account limits in [Limits](#limits) apply whether or not approval is skipped.
+
 **Completion callbacks (optional):** If your application has a callback destination,
 generate an opaque, unpredictable nonce (for example, `NONCE="$(openssl rand -hex 32)"`)
 and add both flags to the create command above:
@@ -219,6 +234,14 @@ context was supplied. Retrieve the request to check its status after a callback.
 the subscription or recurring purchase. Confirm the spending limit, currency,
 and cadence from the user or existing task context. Describe these terms in
 `context` so the user can review them during approval.
+
+Recurring payments are for merchant subscriptions, where the merchant keeps one
+card on file and charges it each period (for example, a software subscription).
+They are not supported with Link balance. For something the user wants bought
+repeatedly that is not a merchant subscription (for example, reordering an item
+every month, possibly from a different merchant each time), create a separate
+one-time spend request for each purchase instead. To make those purchases
+without the user approving each one, use the `link-balance` skill.
 
 Add `--recurring-interval day|week|month|year` to `spend-request create`.
 `--recurring-interval-count` is an optional positive integer; the server defaults
@@ -274,6 +297,8 @@ This same `requires_action` status can also appear later from `spend-request ret
 ### Step 5: Complete payment
 
 **Card:** Run `link-cli spend-request retrieve <id> --include card` to get the `card` object with `number`, `cvc`, `exp_month`, `exp_year`, `billing_address` (name, line1, line2, city, state, postal_code, country), and `valid_until` (Unix timestamp — the card stops working after this time). Enter these details into the merchant's checkout form.
+
+**Link balance:** When the spend request uses the user's Link balance as its payment method, the returned `card` does not include `billing_address`. The card's billing address is the address on the user's Link account. If checkout asks for a billing address or ZIP, run `link-cli user-info retrieve --format json` and use `address` (with `name` for the cardholder name). If `address` is absent, ask the user for their billing address rather than guessing. Don't use a shipping address as the billing address unless the user confirms they match.
 
 **Safe credential handoff:** To avoid leaking card data into transcripts or logs, add `--output-file <path>` to write the full card to a local file (created with `0600` permissions) while stdout shows only redacted data. Use `--force` to overwrite an existing file. Example:
 
@@ -514,6 +539,8 @@ Notes:
 | Rolling creation rate | 200 per 60 days |
 
 Dollar limits are enforced as the USD equivalent for spend requests in other currencies.
+
+These limits also apply to spend requests created with `--use-approval-policy`. A per-purchase approval limit set higher than $500 does not allow a single spend request above $500, and several automatically approved purchases on the same day still count toward the daily limit.
 
 If a spend request is created but approval is not requested within the window, or the user does not approve within 30 minutes, the request expires. Create a new one. Do not poll indefinitely — if the approval window is nearly exhausted and the user hasn't responded, surface this to the user.
 
