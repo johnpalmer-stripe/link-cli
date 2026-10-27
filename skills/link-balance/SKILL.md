@@ -177,7 +177,7 @@ link-cli spend-request create \
 
 After creating the spend request, you can check its status using `link-cli spend-request retrieve <id> --format json`.
 
-- **`approved`:** use `--include card` to retrieve the new payment credential and complete the purchase, as in `create-payment-credential` Step 5. The card won't include `billing_address`; see the Link balance note in that step for how to get the billing address.
+- **`approved`:** use `--include card` to retrieve the new payment credential and complete the purchase, as in `create-payment-credential` Step 5.
 - **`created` or `pending_approval`:** approval wasn't skipped. Tell the user and follow the normal approval flow, or stop if the user isn't available.
 - **`requires_action`:** follows the normal handling in `create-payment-credential`.
 - **An insufficient-funds error:** the balance is too low. Tell the user the current balance and the amount needed, and send a top-up link.

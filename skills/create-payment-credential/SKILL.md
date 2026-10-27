@@ -298,8 +298,6 @@ This same `requires_action` status can also appear later from `spend-request ret
 
 **Card:** Run `link-cli spend-request retrieve <id> --include card` to get the `card` object with `number`, `cvc`, `exp_month`, `exp_year`, `billing_address` (name, line1, line2, city, state, postal_code, country), and `valid_until` (Unix timestamp — the card stops working after this time). Enter these details into the merchant's checkout form.
 
-**Link balance:** When the spend request uses the user's Link balance as its payment method, the returned `card` does not include `billing_address`. The card's billing address is the address on the user's Link account. If checkout asks for a billing address or ZIP, run `link-cli user-info retrieve --format json` and use `address` (with `name` for the cardholder name). If `address` is absent, ask the user for their billing address rather than guessing. Don't use a shipping address as the billing address unless the user confirms they match.
-
 **Safe credential handoff:** To avoid leaking card data into transcripts or logs, add `--output-file <path>` to write the full card to a local file (created with `0600` permissions) while stdout shows only redacted data. Use `--force` to overwrite an existing file. Example:
 
 ```bash
