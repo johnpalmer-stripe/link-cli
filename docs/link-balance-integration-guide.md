@@ -8,12 +8,13 @@
 
 Link balance is a payment method that lets users hold money in their Link account. It can be used like any other payment method in link-cli, but it can also be used to enable agents to make purchases without requesting approval.
 
-This unlocks several new use cases for agentic spending:
+This unlocks several new use cases for agentic spending, for example:
 
 * **Approve now, buy later.** "Grab these sneakers when my size is back in stock." The user agrees once, and your agent buys whenever the condition is met.  
 * **Buy at a specific time.** "Get two tickets when they go on sale at midnight." The purchase happens on time, even if the user is busy or away from their devices.  
 * **Repeated purchases on a schedule.** "Reorder dog food every month from the store with the cheapest price." Each order goes through on schedule, even if the merchant changes.  
 * **Fewer interruptions.** For any kind of purchase, some users would prefer to reduce friction and let their agent spend without requesting approval each time.
+* **Proactive purchases.** If the user wants it, your agent can buy things on its own initiative, based on the user's instructions or preferences, without being asked each time. The skill files tell agents to do this only when they know the user wants it, to start with small purchases, and to tell the user after every one.
 
 Link balance does not support link-cli's recurring payments (`--recurring-interval`). Those are for merchant subscriptions, where the merchant keeps one card on file and charges it each period, such as a software subscription. Repeated purchases with Link balance are separate one-time spend requests, so each one can go to a different merchant.
 
