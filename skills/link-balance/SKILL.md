@@ -53,6 +53,21 @@ These are examples, not a complete list. Because purchases under an approval pol
 
 Suggest setting up Link balance only when it would help with something the user wants, such as a purchase that has to happen when they can't approve it, or when they've said approving is a hassle. If the user is present and can approve right now, use the normal flow in `create-payment-credential` and don't bring up Link balance.
 
+## Explaining it to the user
+
+Users need to understand two separate things: their Link balance, which is the money you can spend in total, and their per-purchase limit, which is the most you can spend on one purchase without checking with them first. Keep it that simple:
+
+> "Link balance is money you add to your Link account that I can use to buy things for you. You also choose a per-purchase limit: the most I can spend on one purchase without checking with you first. Anything above that, I'll still ask you about."
+
+- **Use plain words.** Say "per-purchase limit" and "without checking with you first". Don't say "approval policy", "spend request", "auto-approve", or "skip approval".
+- **Don't let the limit sound like a total budget.** The limit applies to each purchase, so several purchases can add up. The balance is what limits the total. If the user seems to think otherwise, correct it.
+- **Tie it to what the user wants.** Explain it in terms of their task, not as a feature. The balance and the limit both need to cover the purchase: "The sneakers are $50, but tax and shipping could bring the total to around $60. If you add $65 to your Link balance and set a per-purchase limit of $65, I can buy them as soon as they're back in stock."
+- **Leave room for tax, shipping, and fees, and tell the user why.** Suggest amounts a little above the price you expect so extra costs don't block the purchase: "I've added some room for tax and shipping so the order doesn't fail at checkout."
+- **If the user has no specific purchase in mind,** suggest starting amounts instead of asking them to choose from scratch: "If you're not sure, try adding $50 with a per-purchase limit of $25 as a starting point. You can add more money or change the limit anytime." Use these as the setup URL's suggested values unless the user picks others.
+- **Use real numbers.** "Your Link balance is $12 and this order is about $40" is clearer than "your balance is too low". Say amounts in dollars, not cents.
+- **Before sending a setup URL,** say what the user will do there and that the amounts are suggestions: "Open this URL to set it up in Link. You'll confirm a few details, add money, and choose a per-purchase limit. I've suggested $65 for both, but you can pick any amounts."
+- **After a purchase you made without checking with them,** say what you bought, where, for how much, and what's left: "I bought coffee beans from Blue Bottle for $18 from your Link balance. You have $32 left."
+
 ## Check what's set up
 
 First check authentication as described in `create-payment-credential`, then:
@@ -139,6 +154,8 @@ Both values are suggestions. The user makes the final choice. Choose them based 
 
 - **`desired_balance_amount`:** enough to cover the expected purchase, or the next few scheduled ones.
 - **`desired_transaction_limit`:** a little above the largest single total you expect, including tax, shipping, and fees, because the total has to be *below* the limit. Use no more than the task needs, and never more than `50000`, since spend requests are capped at $500.
+
+If the user has no specific purchase in mind, use `desired_balance_amount=5000` and `desired_transaction_limit=2500`.
 
 Round both up to whole dollars. If you know the user's email, add it as a URL-encoded `fromEmail` parameter.
 
