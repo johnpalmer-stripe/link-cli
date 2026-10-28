@@ -99,9 +99,9 @@ link-cli approval-policy retrieve --format json
 
 If `allowed_payment_methods` is present, it must include the user's Link balance ID. The `per_purchase` amount is the maximum amount that can be spent in a single purchase without requesting approval. An error from this command means you have no approval policy, or these features aren't enabled for your OAuth client yet. In either case, you cannot skip approval.
 
-`link-cli user-info retrieve --format json` also tells you whether the user is `eligible_for_balance`. If `agent_wallet_verification_requirement.action_url` is present, show it to the user.
+If `link-cli user-info retrieve --format json` returns `agent_wallet_verification_requirement.action_url`, show it to the user.
 
-Never infer setup from eligibility, or from the fact that the user opened a link. Re-run the commands to confirm.
+Never infer setup from the fact that the user opened a link. Re-run the commands to confirm.
 
 ## Send the user to set it up
 
