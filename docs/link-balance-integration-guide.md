@@ -41,7 +41,7 @@ You can direct your user to complete these steps by sending them a setup URL. Th
 | `desired_balance_amount` | The total amount (in cents) that you’d like your user to have in their balance. | In the “add money” step, if the user’s balance is below your desired amount, the Link UI will prefill the number required to reach the desired amount. The user can still change the amount they choose to add. Must be a whole number of dollars. |
 | `currency` | usd | If your URL is including the `desired_balance_amount` parameter, you must include this parameter with value `usd`. |
 | `desired_transaction_limit` | Amount (in cents) that you’d like your agent to be able to spend without human approval | In the approval policy setup, the UI will be prefilled with this value. The user can change the amount to be any value during this step. Must be a whole number of dollars. |
-| `completion_callback_url` | Your callback url | Callback url that will be used to direct the user back to your application once the flow is complete. Must be registered with your Agent merchant account. |
+| `completion_callback_url` | Your callback url | Callback url that will be used to direct the user back to your application once the flow is complete. Must be registered with your Agent merchant account. You don't need a separate callback url for balance setup: if one is already registered for your client ID, you can use it here. |
 | `nonce` | Your nonce | nonce (optional): If provided along with  `completion_callback_url`  it is returned along with `status=success`  in the callback url example: `<completion_callback_url>?nonce=<original nonce value>&status=success` |
 
 Example request for a \$5.00 transaction limit and \$10.00 total balance:

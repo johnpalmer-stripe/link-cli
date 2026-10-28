@@ -118,7 +118,7 @@ https://app.link.com/balance/setup?key=<publishable_key>&client_id=<client_id>&d
 | `desired_balance_amount` | The total amount (in cents) that you'd like the user to have in their balance | In the "add money" step, if the user's balance is below your desired amount, the Link UI will prefill the number required to reach the desired amount. The user can still change the amount they choose to add. Must be a whole number of dollars |
 | `currency` | `usd` | If your URL includes the `desired_balance_amount` parameter, you must include this parameter with value `usd` |
 | `desired_transaction_limit` | Amount (in cents) that you'd like to be able to spend without human approval | In the approval policy setup, the UI will be prefilled with this value. The user can change the amount to be any value during this step. Must be a whole number of dollars |
-| `completion_callback_url` | Your callback URL | Used to direct the user back to your application once the flow is complete. Must be registered with your agent's account |
+| `completion_callback_url` | Your callback URL | Used to direct the user back to your application once the flow is complete. Must be registered with your agent's account. Balance setup doesn't need its own callback URL; use the one already registered for your client ID |
 | `nonce` | Your nonce | Optional. If provided along with `completion_callback_url`, it is returned along with `status=success` in the callback URL, for example `<completion_callback_url>?nonce=<original nonce value>&status=success` |
 
 The setup URL sends the user to a Link flow with the following steps, some of which will be skipped depending on your query parameter values:
