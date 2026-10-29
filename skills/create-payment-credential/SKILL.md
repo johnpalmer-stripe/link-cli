@@ -148,8 +148,8 @@ link-cli payment-methods list
 
 **Link balance:** the list can include a Link balance payment method, identified by `"type": "BALANCE"` and a `balance_details` object. It holds money in the user's Link account and is set up once, through a separate onboarding flow rather than the initial `link-cli` setup. After that it is one of the user's payment methods and can be used on any spend request, including a normal one the user approves.
 
-- If Link balance is listed, `balance_details.available_balance` shows the user's current balance. This does not mean you have an approval policy: permission to create spend requests that skip approval when the individual purchase is below a specified maximum amount. Check that with `link-cli approval-policy retrieve --format json`, which returns an error if you have no policy.
-- If the purchase should happen without approval because it needs to happen later, repeatedly on a schedule, while the user is away or asleep, because the user wants to avoid the friction of manual approval, or because it's a proactive purchase you know the user wants, then the user must have an approval policy for you. Load the `link-balance` skill before agreeing to the purchase. It covers checking the current balance and transaction limit against the expected total, flagging any shortfall to the user, and sending them to set up or top up Link balance or raise the limit.
+- If Link balance is listed, `balance_details.available_balance` shows the user's current balance. This does not mean you have an approval policy: permission to create spend requests that skip approval when the individual purchase is below the user's approval threshold. Check that with `link-cli approval-policy retrieve --format json`, which returns an error if you have no policy.
+- If the purchase should happen without approval because it needs to happen later, repeatedly on a schedule, while the user is away or asleep, because the user wants to avoid the friction of manual approval, or because it's a proactive purchase you know the user wants, then the user must have an approval policy for you. Load the `link-balance` skill before agreeing to the purchase. It covers checking the current balance and approval threshold against the expected total, flagging any shortfall to the user, and sending them to set up or top up Link balance or raise the threshold.
 - If the user is present, can approve the purchase, and has not said they want to stop approving purchases manually, you do not need an approval policy. Do not push Link balance on every purchase.
 
 Only rename or clear a payment-method nickname when the user explicitly asks.
@@ -204,7 +204,7 @@ merchant's network profile. Keep the card's merchant name and URL parameters.
 **Paying with Link balance:** pass the Link balance payment method's ID with `--payment-method-id` and do not rely on the default payment method. The user approves the request as usual unless you pass `--use-approval-policy`. To be approved automatically, all of these must be true:
 
 - The request uses the Link balance payment method's ID as `--payment-method-id`.
-- The final total, including tax, shipping, and fees, is below the `limits.per_purchase` amount of the `spend_request_create` rule returned by `approval-policy retrieve`.
+- The final total, including tax, shipping, and fees, is below the approval threshold: the `limits.per_purchase` amount of the `spend_request_create` rule returned by `approval-policy retrieve`.
 - If that rule lists `allowed_payment_methods`, the Link balance ID is in it.
 - The available Link balance covers the full total.
 
@@ -538,7 +538,7 @@ Notes:
 
 Dollar limits are enforced as the USD equivalent for spend requests in other currencies.
 
-These limits also apply to spend requests created with `--use-approval-policy`. A per-purchase approval limit set higher than $500 does not allow a single spend request above $500, and several automatically approved purchases on the same day still count toward the daily limit.
+These limits also apply to spend requests created with `--use-approval-policy`. An approval threshold set higher than $500 does not allow a single spend request above $500, and several automatically approved purchases on the same day still count toward the daily limit.
 
 If a spend request is created but approval is not requested within the window, or the user does not approve within 30 minutes, the request expires. Create a new one. Do not poll indefinitely — if the approval window is nearly exhausted and the user hasn't responded, surface this to the user.
 

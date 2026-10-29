@@ -31,7 +31,7 @@ Latest skill files: [`link-cli`](link-cli-skill.md), [`create-payment-credential
 In order to let your agent spend without approvals, your user must set up two things in Link: a balance and an approval policy.
 
 1. **Link balance:** The user must onboard to Link balance and fund their account.  
-2. **Approval policy:** The user creates an approval policy for your agent. It defines the maximum amount your agent can spend on a single purchase without asking for approval.
+2. **Approval policy:** The user creates an approval policy for your agent. It sets an approval threshold: purchases below this amount don't need the user's approval.
 
 You can direct your user to complete these steps by sending them a setup URL. The setup URL contains the following query parameters.
 
@@ -41,11 +41,11 @@ You can direct your user to complete these steps by sending them a setup URL. Th
 | `client_id` | Your Agent’s Client ID | This needs to be manually provisioned and provided by Link. Get in touch with the Link team to get a Client ID if you don’t have one yet. |
 | `desired_balance_amount` | The total amount (in cents) that you’d like your user to have in their balance. | In the “add money” step, if the user’s balance is below your desired amount, the Link UI will prefill the number required to reach the desired amount. The user can still change the amount they choose to add. Must be a whole number of dollars. |
 | `currency` | usd | If your URL is including the `desired_balance_amount` parameter, you must include this parameter with value `usd`. |
-| `desired_transaction_limit` | Amount (in cents) that you’d like your agent to be able to spend without human approval | In the approval policy setup, the UI will be prefilled with this value. The user can change the amount to be any value during this step. Must be a whole number of dollars. |
+| `desired_transaction_limit` | The approval threshold (in cents) you’d like: purchases below it don’t need human approval | In the approval policy setup, the UI will be prefilled with this value. The user can change the amount to be any value during this step. Must be a whole number of dollars. |
 | `completion_callback_url` | Your callback url | Callback url that will be used to direct the user back to your application once the flow is complete. Must be registered with your Agent merchant account. You don't need a separate callback url for balance setup: if one is already registered for your client ID, you can use it here. |
 | `nonce` | Your nonce | nonce (optional): If provided along with  `completion_callback_url`  it is returned along with `status=success`  in the callback url example: `<completion_callback_url>?nonce=<original nonce value>&status=success` |
 
-Example request for a \$5.00 transaction limit and \$10.00 total balance:
+Example request for a \$5.00 approval threshold and \$10.00 total balance:
 
 ```
 https://app.link.com/balance/setup?key=<YOUR_CLIENT_PK>&client_id=<YOUR_CLIENT_ID>&desired_balance_amount=1000&currency=usd&desired_transaction_limit=500
@@ -55,7 +55,7 @@ The setup URL sends your user to a Link flow with the following steps, some of w
 
 1. **Balance onboarding:** If the user has never set up Link balance, they fill out some basic KYC details to create their balance. For existing agent wallet users with link-cli set up, the new info to be collected is DOB and the last 4 digits of their SSN. If the user already has Link balance set up, they skip this and go directly to step 2\.  
 2. **Add money:** The user can add money to their Link balance. The UI will prefill the amount to add based on the `desired_balance_amount` query parameter, but it is editable by the user. If this parameter is not defined, or if the user already has a Link balance greater than or equal to the desired balance amount, they skip this step and go directly to step 3\.  
-3. **Approval policy setup:** The user sets the max amount that your agent can spend on a single purchase without requesting approval. The UI will prefill the value using the `desired_transaction_limit` query parameter, but it is editable by the user. If this parameter is defined, the user will always see this step, even if the desired limit is lower than the user’s existing limit. If you exclude this parameter, this step is skipped.
+3. **Approval policy setup:** The user sets the approval threshold: the amount a single purchase must stay below for your agent to buy it without requesting approval. The UI will prefill the value using the `desired_transaction_limit` query parameter, but it is editable by the user. If this parameter is defined, the user will always see this step, even if the desired limit is lower than the user’s existing limit. If you exclude this parameter, this step is skipped.
 
 ### Requesting a top-up
 
@@ -67,7 +67,7 @@ https://app.link.com/balance/setup?key=<YOUR_CLIENT_PK>&client_id=<YOUR_CLIENT_I
 
 ### Changing the approval policy
 
-If the user’s purchase limit is too low to accomplish what your agent needs to do, you can use the setup URL to ask your user to update it to a new amount. You can also send your user to lower the amount if they ask to do so. In this example, the URL is sending the user to change the purchase limit in their approval policy to \$25.
+If the user’s approval threshold is too low to accomplish what your agent needs to do, you can use the setup URL to ask your user to update it to a new amount. You can also send your user to lower the amount if they ask to do so. In this example, the URL is sending the user to change the approval threshold in their approval policy to \$25.
 
 ```
 https://app.link.com/balance/setup?key=<YOUR_CLIENT_PK>&client_id=<YOUR_CLIENT_ID>&desired_transaction_limit=2500
@@ -118,7 +118,7 @@ To understand how much your agent can spend without approvals, call `link-cli ap
 
 ```
 
-If `allowed_payment_methods` is present, it must include the user’s Link balance ID.  The `per_purchase` amount returns the maximum amount that can be spent in a single purchase without requesting approval.
+If `allowed_payment_methods` is present, it must include the user’s Link balance ID.  The `per_purchase` amount is the user's approval threshold: a single purchase must be below it to skip approval.
 
 When a spend request is using Link balance as the payment method and is lower than the amount defined in the approval policy, it can use the `--use-approval-policy` flag to be approved automatically. Note that the Link balance must cover the entire purchase including tax, shipping, and fees in order for the spend request to be approved.
 
@@ -145,6 +145,6 @@ You can also create normal spend requests that do require approval using Link ba
 
 ### Usage tips
 
-When your agent plans to spend without requesting approval, it’s important to check the user’s Link balance and approval policy ahead of time. If either the Link balance or purchase limit is too low, you should construct a setup URL for your user to increase them to the required amounts.
+When your agent plans to spend without requesting approval, it’s important to check the user’s Link balance and approval policy ahead of time. If either the Link balance or approval threshold is too low, you should construct a setup URL for your user to increase them to the required amounts.
 
 For delayed or scheduled purchases, your agent should also check the balance and approval policy once more directly before creating the spend request in order to ensure the payment will be successful.
